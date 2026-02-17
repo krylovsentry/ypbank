@@ -1,7 +1,7 @@
-use std::io::{BufRead, BufReader, Read, Write};
-use std::str::FromStr;
 use crate::error::ParserError;
 use crate::transaction::{Transaction, TxStatus, TxType};
+use std::io::{BufRead, BufReader, Read, Write};
+use std::str::FromStr;
 
 // Assuming that order of fields are always the same
 // That's why we're trying to parse in such way
@@ -9,7 +9,6 @@ use crate::transaction::{Transaction, TxStatus, TxType};
 //  let tx_id = fields[0].parse::<u64>()?;
 // ```
 pub fn read_csv<R: Read>(reader: R) -> Result<Vec<Transaction>, ParserError> {
-
     let buf_reader = BufReader::new(reader);
     let mut lines = buf_reader.lines();
     let mut transactions: Vec<Transaction> = Vec::new();
@@ -19,7 +18,10 @@ pub fn read_csv<R: Read>(reader: R) -> Result<Vec<Transaction>, ParserError> {
         let expected = "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION";
 
         if header.trim() != expected {
-            return Err(ParserError::FormatParseError(format!("Header does not match: expected - {}, got - {}", expected, header)));
+            return Err(ParserError::FormatParseError(format!(
+                "Header does not match: expected - {}, got - {}",
+                expected, header
+            )));
         }
     } else {
         return Err(ParserError::FormatParseError("Empty csv file".to_string()));
@@ -36,7 +38,10 @@ pub fn read_csv<R: Read>(reader: R) -> Result<Vec<Transaction>, ParserError> {
         let fields = parse_csv_line(trimmed_line)?;
 
         if fields.len() < 7 {
-            return Err(ParserError::MissingRequiredFields(format!("Expected at least 7 fields, got: {}", fields.len())));
+            return Err(ParserError::MissingRequiredFields(format!(
+                "Expected at least 7 fields, got: {}",
+                fields.len()
+            )));
         }
 
         let transaction = fields_to_transaction(fields)?;
@@ -56,15 +61,15 @@ fn parse_csv_line(line: &str) -> Result<Vec<String>, ParserError> {
             '"' => {
                 if in_quotes && chars.peek() == Some(&'"') {
                     current.push('"');
-                        chars.next();
+                    chars.next();
                 } else {
                     in_quotes = !in_quotes;
                 }
-            },
+            }
             ',' if !in_quotes => {
                 fields.push(current.clone());
                 current.clear();
-            },
+            }
             _ => current.push(c),
         }
     }
@@ -85,7 +90,31 @@ fn fields_to_transaction(fields: Vec<String>) -> Result<Transaction, ParserError
     })
 }
 
-pub fn write_csv<W: Write>(transactions: &[Transaction], writer: W) -> Result<(), ParserError> {
+pub fn write_csv<W: Write>(transactions: &[Transaction], mut writer: W) -> Result<(), ParserError> {
+    writeln!(
+        writer,
+        "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION"
+    )?;
+
+    for tx in transactions {
+        let tx_type_str = tx.tx_type.to_string();
+        let tx_status_str = tx.status.to_string();
+        let description = format!("\"{}\"", tx.description.replace('"', "\"\""));
+
+        writeln!(
+            writer,
+            "{},{},{},{},{},{},{},{}",
+            tx.tx_id,
+            tx_type_str,
+            tx.from_user_id,
+            tx.to_user_id,
+            tx.amount,
+            tx.timestamp,
+            tx_status_str,
+            description
+        )?;
+    }
+    writer.flush()?;
     Ok(())
 }
 
@@ -93,9 +122,8 @@ pub fn write_csv<W: Write>(transactions: &[Transaction], writer: W) -> Result<()
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
-    use crate::error::ParserError;
     use crate::transaction::{TxStatus, TxType};
+    use std::io::Cursor;
 
     #[test]
     fn test_read_csv_valid() {
@@ -107,8 +135,6 @@ TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION
 
         let cursor = Cursor::new(data);
         let txs = read_csv(cursor).unwrap();
-
-
 
         assert_eq!(txs.len(), 3);
 

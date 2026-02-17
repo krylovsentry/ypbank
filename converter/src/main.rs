@@ -28,7 +28,6 @@ fn main() -> Result<(), ParserError> {
     let mut input = BufReader::new(file);
 
     let transactions = read_transactions(input_format, &mut input)?;
-    println!("Transactions: {:?}", transactions);
     let stdout = std::io::stdout();
     let mut writer = stdout.lock();
     write_transactions(output_format, &mut writer, &transactions)?;
