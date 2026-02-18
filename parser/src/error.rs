@@ -1,5 +1,5 @@
 use std::fmt;
-use std::fmt::Formatter;
+use std::fmt::{write, Formatter};
 use std::io::Error;
 use std::num::ParseIntError;
 use std::str::FromStr;
@@ -12,6 +12,12 @@ pub enum ParserError {
     InvalidTransactionType(String),
     MissingRequiredFields(String),
     ParseIntError(ParseIntError),
+    InvalidTransactionLineFormat{
+        line: String,
+    },
+    DuplicatedFieldInRecord{
+        key: String,
+    },
 }
 
 impl fmt::Display for ParserError {
@@ -30,6 +36,12 @@ impl fmt::Display for ParserError {
             },
             ParserError::ParseIntError(err) => {
                 write!(f, "Error parsing integer: {}", err)
+            },
+            ParserError::InvalidTransactionLineFormat { line } => {
+                write!(f, "Invalid transaction line format: {}", line)
+            },
+            ParserError::DuplicatedFieldInRecord{ key} => {
+                write!(f, "Duplicate field '{}' in record", key)
             }
         }
     }
