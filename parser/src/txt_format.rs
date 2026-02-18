@@ -114,6 +114,19 @@ fn construct_transaction(
     })
 }
 
-pub fn write_txt<W: Write>(transactions: &[Transaction], writer: W) -> Result<(), ParserError> {
-    todo!()
+pub fn write_txt<W: Write>(transactions: &[Transaction], mut writer: W) -> Result<(), ParserError> {
+    for (i, tx) in transactions.iter().enumerate() {
+        if i > 0 {
+            writeln!(writer)?;
+        }
+        writeln!(writer, "TX_ID: {}", tx.tx_id)?;
+        writeln!(writer, "TX_TYPE: {}", tx.tx_type)?;
+        writeln!(writer, "FROM_USER_ID: {}", tx.from_user_id)?;
+        writeln!(writer, "TO_USER_ID: {}", tx.to_user_id)?;
+        writeln!(writer, "AMOUNT: {}", tx.amount)?;
+        writeln!(writer, "TIMESTAMP: {}", tx.timestamp)?;
+        writeln!(writer, "STATUS: {}", tx.status)?;
+        writeln!(writer, "DESCRIPTION: \"{}\"", tx.description)?;
+    }
+    Ok(())
 }
