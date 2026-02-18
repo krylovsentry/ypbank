@@ -75,3 +75,41 @@ impl FromStr for TxStatus {
         }
     }
 }
+
+impl TxType {
+    pub fn from_u8(byte: u8) -> Option<Self> {
+        match byte {
+            0 => Some(TxType::Deposit),
+            1 => Some(TxType::Transfer),
+            2 => Some(TxType::Withdrawal),
+            _ => None,
+        }
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        match self {
+            TxType::Deposit => 0,
+            TxType::Transfer => 1,
+            TxType::Withdrawal => 2,
+        }
+    }
+}
+
+impl TxStatus {
+    pub fn from_u8(byte: u8) -> Option<Self> {
+        match byte {
+            0 => Some(TxStatus::Success),
+            1 => Some(TxStatus::Failure),
+            2 => Some(TxStatus::Pending),
+            _ => None,
+        }
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        match self {
+            TxStatus::Success => 0,
+            TxStatus::Failure => 1,
+            TxStatus::Pending => 2,
+        }
+    }
+}

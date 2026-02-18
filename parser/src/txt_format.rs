@@ -4,15 +4,6 @@ use std::collections::HashMap;
 use std::io::{BufRead, Read, Write};
 use std::str::FromStr;
 
-//# Record 1 (DEPOSIT)
-// TX_TYPE: DEPOSIT
-// TO_USER_ID: 9223372036854775807
-// FROM_USER_ID: 0
-// TIMESTAMP: 1633036860000
-// DESCRIPTION: "Record number 1"
-// TX_ID: 1000000000000000
-// AMOUNT: 100
-// STATUS: FAILURE
 pub fn read_txt<R: Read>(reader: R) -> Result<Vec<Transaction>, ParserError> {
     let mut lines = std::io::BufReader::new(reader).lines();
 

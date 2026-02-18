@@ -3,6 +3,7 @@ use std::fmt::{write, Formatter};
 use std::io::Error;
 use std::num::ParseIntError;
 use std::str::FromStr;
+use std::string::FromUtf8Error;
 
 #[derive(Debug)]
 pub enum ParserError {
@@ -18,6 +19,7 @@ pub enum ParserError {
     DuplicatedFieldInRecord{
         key: String,
     },
+    Utf8Error(String),
 }
 
 impl fmt::Display for ParserError {
@@ -42,6 +44,9 @@ impl fmt::Display for ParserError {
             },
             ParserError::DuplicatedFieldInRecord{ key} => {
                 write!(f, "Duplicate field '{}' in record", key)
+            },
+            ParserError::Utf8Error(err) => {
+                write!(f, "Error parsing UTF-8: {}", err)
             }
         }
     }
@@ -56,5 +61,11 @@ impl From<std::io::Error> for ParserError {
 impl From<std::num::ParseIntError> for ParserError {
     fn from(value: ParseIntError) -> Self {
         Self::ParseIntError(value)
+    }
+}
+
+impl From<std::string::FromUtf8Error> for ParserError {
+    fn from(err: std::string::FromUtf8Error) -> Self {
+        ParserError::Utf8Error(err.to_string())
     }
 }
