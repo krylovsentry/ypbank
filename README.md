@@ -85,3 +85,7 @@ The transaction records in 'records_example.bin' and 'records_example.csv' are i
 ```
 
 В случае несовпадения будет выведено человекочитаемое описание проблемы и процесс завершится с ненулевым кодом.
+
+```shell
+Error: Transaction present in 'file_examples\records_example.bin' but not in 'file_examples\records_example.csv': Transaction { tx_id: 1000000000000994, tx_type: Transfer, from_user_id: 9223372036854775807, to_user_id: 9223372036854775807, amount: 99500, timestamp: 1633096500000, status: Pending, description: "Record number 995" }
+```
