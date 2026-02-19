@@ -1,7 +1,7 @@
 # YPBank tools
 
 [![Rust CI](https://github.com/krylovsentry/ypbank/actions/workflows/blank.yml/badge.svg)](https://github.com/krylovsentry/ypbank/actions/workflows/blank.yml)
-[![Coverage](https://codecov.io/gh/krylovsentry/ypbank/branch/main/graph/badge.svg)](https://codecov.io/gh/krylovsentry/ypbank)
+[![Coverage Status](https://coveralls.io/repos/github/krylovsentry/ypbank/badge.svg?branch=main)](https://coveralls.io/github/krylovsentry/ypbank?branch=main)
 
 Набор утилит и библиотек для работы со списками транзакций YPBank.
 
