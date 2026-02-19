@@ -40,7 +40,7 @@ enum ComparerError {
 impl std::fmt::Display for ComparerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ComparerError::Io(e) => write!(f, "IO error: {}", e),
+            ComparerError::Io(e) => write!(f, "Comparer IO error: {}", e),
             ComparerError::Parser(msg) => write!(f, "Parser error: {}", msg),
             ComparerError::Difference(msg) => write!(f, "{}", msg),
         }
