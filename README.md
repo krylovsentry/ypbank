@@ -1,5 +1,7 @@
 # YPBank tools
 
+[![Rust CI](https://github.com/krylovsentry/ypbank/actions/workflows/blank.yml/badge.svg)](https://github.com/krylovsentry/ypbank/actions/workflows/blank.yml)
+
 Набор утилит и библиотек для работы со списками транзакций YPBank.
 
 ## Структура workspace
@@ -62,5 +64,23 @@ cargo run -p converter -- \
 
 ### comparer
 
+CLI‑утилита для сравнения двух файлов со списками транзакций.
 
+Пример запуска
+с разными форматами входных файлов:
 
+```bash
+cargo run -p comparer -- \
+  --file1 records_example.bin \
+  --format1 binary \
+  --file2 records_example.csv \
+  --format2 csv
+```
+
+Если все транзакции совпадают (сравниваются все поля, порядок не важен), утилита выведет сообщение:
+
+```text
+The transaction records in 'records_example.bin' and 'records_example.csv' are identical.
+```
+
+В случае несовпадения будет выведено человекочитаемое описание проблемы и процесс завершится с ненулевым кодом.
