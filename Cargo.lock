@@ -103,6 +103,7 @@ name = "comparer"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "parser",
 ]
 
 [[package]]

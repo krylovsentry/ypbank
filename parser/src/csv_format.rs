@@ -117,3 +117,79 @@ pub fn write_csv<W: Write>(transactions: &[Transaction], mut writer: W) -> Resul
     writer.flush()?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    fn sample_transactions() -> Vec<Transaction> {
+        vec![
+            Transaction {
+                tx_id: 1,
+                tx_type: TxType::Deposit,
+                from_user_id: 10,
+                to_user_id: 20,
+                amount: 100,
+                timestamp: 1,
+                status: TxStatus::Success,
+                description: "simple".into(),
+            },
+            Transaction {
+                tx_id: 2,
+                tx_type: TxType::Transfer,
+                from_user_id: 30,
+                to_user_id: 40,
+                amount: -50,
+                timestamp: 2,
+                status: TxStatus::Pending,
+                description: "with, comma and \"quotes\"".into(),
+            },
+        ]
+    }
+
+    #[test]
+    fn csv_roundtrip_via_module_preserves_transactions() {
+        let original = sample_transactions();
+        let mut buffer = Cursor::new(Vec::<u8>::new());
+
+        write_csv(&original, &mut buffer).expect("write_csv");
+
+        buffer.set_position(0);
+        let parsed = read_csv(&mut buffer).expect("read_csv");
+
+        assert_eq!(parsed, original);
+    }
+
+    #[test]
+    fn read_csv_fails_on_wrong_header() {
+        let data = b"WRONG,HEADER\n";
+        let res = read_csv(&data[..]);
+        assert!(matches!(
+            res,
+            Err(ParserError::FormatParseError(msg)) if msg.contains("Header does not match")
+        ));
+    }
+
+    #[test]
+    fn read_csv_fails_on_empty_file() {
+        let data: &[u8] = b"";
+        let res = read_csv(data);
+        assert!(matches!(
+            res,
+            Err(ParserError::FormatParseError(msg)) if msg.contains("Empty csv file")
+        ));
+    }
+
+    #[test]
+    fn read_csv_errors_on_insufficient_fields() {
+        // Строка с 6 полями (меньше 7), чтобы сработала проверка `fields.len() < 7`
+        let data = b"TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION\n\
+1,DEPOSIT,1,2,100,1234567890\n";
+        let res = read_csv(&data[..]);
+        assert!(matches!(
+            res,
+            Err(ParserError::MissingRequiredFields(msg)) if msg.contains("Expected at least 7 fields")
+        ));
+    }
+}

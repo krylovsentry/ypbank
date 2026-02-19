@@ -1,4 +1,3 @@
-use std::error::Error;
 use crate::error::ParserError;
 use crate::transaction::{Transaction, TxStatus, TxType};
 use std::io::{Read, Write};
@@ -54,7 +53,9 @@ fn parse_body(body: &[u8]) -> Result<Transaction, ParserError> {
     let mut desc_buf = vec![0u8; desc_len];
     cursor.read_exact(&mut desc_buf)?;
     let description = String::from_utf8(desc_buf)
-        .map_err(|e| ParserError::FormatParseError(format!("Invalid UTF-8 in description: {}", e)))?;
+        .map_err(|e| ParserError::FormatParseError(format!("Invalid UTF-8 in description: {}", e)))?
+        .trim_matches('"')
+        .to_string();
 
     Ok(Transaction {
         tx_id,
@@ -74,11 +75,6 @@ fn read_u8<R: Read>(reader: &mut R) -> Result<u8, ParserError> {
     Ok(buf[0])
 }
 
-fn read_u16<R: Read>(reader: &mut R) -> Result<u16, ParserError> {
-    let mut buf = [0u8; 2];
-    reader.read_exact(&mut buf)?;
-    Ok(u16::from_be_bytes(buf))
-}
 
 fn read_u32<R: Read>(reader: &mut R) -> Result<u32, ParserError> {
     let mut buf = [0u8; 4];
@@ -128,11 +124,6 @@ fn write_u8<W: Write>(writer: &mut W, value: u8) -> Result<(), ParserError> {
     Ok(())
 }
 
-fn write_u16<W: Write>(writer: &mut W, value: u16) -> Result<(), ParserError> {
-    writer.write_all(&value.to_be_bytes())?;
-    Ok(())
-}
-
 fn write_u32<W: Write>(writer: &mut W, value: u32) -> Result<(), ParserError> {
     writer.write_all(&value.to_be_bytes())?;
     Ok(())
@@ -146,4 +137,111 @@ fn write_u64<W: Write>(writer: &mut W, value: u64) -> Result<(), ParserError> {
 fn write_i64<W: Write>(writer: &mut W, value: i64) -> Result<(), ParserError> {
     writer.write_all(&value.to_be_bytes())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    fn sample_transactions() -> Vec<Transaction> {
+        vec![
+            Transaction {
+                tx_id: 1,
+                tx_type: TxType::Deposit,
+                from_user_id: 10,
+                to_user_id: 20,
+                amount: 100,
+                timestamp: 1,
+                status: TxStatus::Success,
+                description: "bin one".into(),
+            },
+            Transaction {
+                tx_id: 2,
+                tx_type: TxType::Withdrawal,
+                from_user_id: 30,
+                to_user_id: 40,
+                amount: -200,
+                timestamp: 2,
+                status: TxStatus::Failure,
+                description: "second".into(),
+            },
+        ]
+    }
+
+    #[test]
+    fn bin_roundtrip_preserves_transactions() {
+        let original = sample_transactions();
+        let mut buffer = Cursor::new(Vec::<u8>::new());
+
+        write_bin(&original, &mut buffer).expect("write_bin");
+
+        buffer.set_position(0);
+        let parsed = read_bin(&mut buffer).expect("read_bin");
+
+        assert_eq!(parsed, original);
+    }
+
+    #[test]
+    fn invalid_magic_produces_format_error() {
+        // Build a valid body but corrupt the magic.
+        let mut buf = Vec::new();
+        buf.extend_from_slice(&[0, 0, 0, 0]); // wrong magic
+        buf.extend_from_slice(&1u32.to_be_bytes()); // record size (dummy)
+        buf.extend_from_slice(&[0u8; 1]); // incomplete body
+
+        let res = read_bin(&buf[..]);
+        assert!(matches!(
+            res,
+            Err(ParserError::FormatParseError(msg)) if msg.contains("Invalid magic")
+        ));
+    }
+
+    #[test]
+    fn invalid_tx_type_byte_produces_error() {
+        let mut body = Vec::new();
+        write_u64(&mut body, 1).unwrap();
+        write_u8(&mut body, 9).unwrap(); // invalid type byte
+        write_u64(&mut body, 10).unwrap();
+        write_u64(&mut body, 20).unwrap();
+        write_i64(&mut body, 100).unwrap();
+        write_u64(&mut body, 1).unwrap();
+        write_u8(&mut body, TxStatus::Success.to_u8()).unwrap();
+        write_u32(&mut body, 0).unwrap();
+
+        let mut buf = Vec::new();
+        buf.extend_from_slice(&MAGIC);
+        write_u32(&mut buf, body.len() as u32).unwrap();
+        buf.extend_from_slice(&body);
+
+        let res = read_bin(&buf[..]);
+        assert!(matches!(
+            res,
+            Err(ParserError::InvalidTransactionType(msg)) if msg.contains("Invalid byte")
+        ));
+    }
+
+    #[test]
+    fn invalid_tx_status_byte_produces_error() {
+        let mut body = Vec::new();
+        write_u64(&mut body, 1).unwrap();
+        write_u8(&mut body, TxType::Deposit.to_u8()).unwrap();
+        write_u64(&mut body, 10).unwrap();
+        write_u64(&mut body, 20).unwrap();
+        write_i64(&mut body, 100).unwrap();
+        write_u64(&mut body, 1).unwrap();
+        write_u8(&mut body, 9).unwrap(); // invalid status byte
+        write_u32(&mut body, 0).unwrap();
+
+        let mut buf = Vec::new();
+        buf.extend_from_slice(&MAGIC);
+        write_u32(&mut buf, body.len() as u32).unwrap();
+        buf.extend_from_slice(&body);
+
+        let res = read_bin(&buf[..]);
+        assert!(matches!(
+            res,
+            Err(ParserError::InvalidTransactionStatus(msg)) if msg.contains("Invalid byte")
+        ));
+    }
 }
