@@ -107,7 +107,7 @@ impl TxType {
     }
 
     /// Кодирует тип транзакции в однобайтовое представление.
-    pub fn to_u8(&self) -> u8 {
+    pub fn to_u8(self) -> u8 {
         match self {
             TxType::Deposit => 0,
             TxType::Transfer => 1,
@@ -130,7 +130,7 @@ impl TxStatus {
     }
 
     /// Кодирует статус транзакции в однобайтовое представление.
-    pub fn to_u8(&self) -> u8 {
+    pub fn to_u8(self) -> u8 {
         match self {
             TxStatus::Success => 0,
             TxStatus::Failure => 1,

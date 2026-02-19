@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn display_io_error_contains_message() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "boom");
+        let io_err = std::io::Error::other("boom");
         let err = ParserError::Io(io_err);
         let msg = err.to_string();
         assert!(msg.contains("IO error:"));
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     fn from_io_error_creates_io_variant() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "io");
+        let io_err = std::io::Error::other("io");
         let err: ParserError = io_err.into();
         match err {
             ParserError::Io(e) => assert_eq!(e.to_string(), "io"),

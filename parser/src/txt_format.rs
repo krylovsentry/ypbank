@@ -5,13 +5,13 @@ use std::io::{BufRead, Read, Write};
 use std::str::FromStr;
 
 pub fn read_txt<R: Read>(reader: R) -> Result<Vec<Transaction>, ParserError> {
-    let mut lines = std::io::BufReader::new(reader).lines();
+    let lines = std::io::BufReader::new(reader).lines();
 
     let mut transaction_parts = HashMap::new();
     let mut transactions = Vec::new();
     let mut in_record = false;
 
-    while let Some(line) = lines.next() {
+    for line in lines {
         let line = line?;
         let trimmed_line = line.trim();
 
@@ -76,7 +76,7 @@ fn construct_transaction(
     let tx_type_str = transaction_parts
         .get("TX_TYPE")
         .ok_or_else(|| ParserError::MissingRequiredFields("TX_TYPE".into()))?;
-    let tx_type = TxType::from_str(&tx_type_str)?;
+    let tx_type = TxType::from_str(tx_type_str)?;
 
     let status_str = transaction_parts
         .get("STATUS")
